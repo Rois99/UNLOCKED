@@ -3,11 +3,16 @@ import Button from '@/components/ui/Button';
 
 export default function Navbar() {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-slate-800/60 bg-slate-950/80 backdrop-blur-md">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-md">
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/25 to-transparent" />
+
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-2">
-          <LockOpenIcon />
-          <span className="text-xl font-black tracking-[0.2em] text-white uppercase">
+        <Link href="/" className="flex items-center gap-2.5">
+          <BicepIcon className="text-cyan-400" />
+          <span
+            className="text-xl font-black uppercase tracking-[0.18em] text-white"
+            style={{ fontFamily: 'var(--font-condensed)' }}
+          >
             Unlocked
           </span>
         </Link>
@@ -22,31 +27,31 @@ export default function Navbar() {
         </nav>
 
         <Link href="/login">
-          <Button variant="primary" size="sm">
-            Enter the Arena
-          </Button>
+          <Button variant="primary" size="sm">Enter the Arena</Button>
         </Link>
       </div>
     </header>
   );
 }
 
-function LockOpenIcon() {
+function BicepIcon({ className }: { className?: string }) {
   return (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
       width="22"
       height="22"
-      viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.5"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="text-cyan-400"
+      className={className}
     >
-      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+      <path d="M5 20 L6 14 C5 11 6 8 9 6" />
+      <path d="M9 6 C11 3 15 3 16 6 C17 9 16 12 15 14" />
+      <path d="M15 14 L16 20" />
+      <line x1="5" y1="20" x2="16" y2="20" />
+      <path d="M7 14 C9 10 13 10 15 14" />
     </svg>
   );
 }

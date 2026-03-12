@@ -1,13 +1,17 @@
-export type Difficulty = 'beginner' | 'intermediate' | 'advanced' | 'elite';
-export type SkillCategory = 'pull' | 'push' | 'lever' | 'balance' | 'core';
-export type SkillState = 'unlocked' | 'available' | 'locked';
+export type Difficulty    = 'beginner' | 'intermediate' | 'advanced' | 'elite';
+export type SkillState    = 'unlocked' | 'available' | 'locked';
+export type TreeType      = 'calisthenics' | 'gym';
+export type SkillCategory =
+  | 'pull' | 'push' | 'lever' | 'balance' | 'core'   // calisthenics
+  | 'squat' | 'bench' | 'deadlift';                    // gym
 
 export interface Skill {
   id: string;
   name: string;
   description: string;
   category: SkillCategory;
-  /** Null means this is a root/base skill with no dependency. */
+  treeType: TreeType;
+  /** null = root / no prerequisite */
   prerequisiteId: string | null;
   xp: number;
   difficulty: Difficulty;
@@ -16,11 +20,10 @@ export interface Skill {
 export interface User {
   id: string;
   username: string;
-  /** Prepared for Supabase Auth — stores the email used at registration. */
   email: string;
   heightM: number;
   weightKg: number;
-  /** ISO date string: 'YYYY-MM-DD' */
+  /** ISO date 'YYYY-MM-DD' */
   dob: string;
   unlockedSkillIds: string[];
   avatarUrl?: string;

@@ -1,10 +1,16 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Geist, Geist_Mono, Barlow_Condensed } from 'next/font/google';
 import ThemeProvider from '@/components/providers/ThemeProvider';
 import './globals.css';
 
-const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
-const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
+const geistSans = Geist({ variable: '--font-sans', subsets: ['latin'] });
+const geistMono = Geist_Mono({ variable: '--font-mono', subsets: ['latin'] });
+const barlowCondensed = Barlow_Condensed({
+  variable: '--font-condensed',
+  subsets: ['latin'],
+  weight: ['700', '800', '900'],
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'UNLOCKED — Prove Your Skills. Level Up.',
@@ -15,7 +21,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${barlowCondensed.variable}`}>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

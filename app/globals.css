@@ -1,36 +1,38 @@
 @import "tailwindcss";
 
-/* Enable class-based dark mode for next-themes */
+/* ── Dark mode via next-themes class strategy ─────────────────────────── */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ── Design tokens ────────────────────────────────────────────────────── */
 :root {
   --background: #020617;   /* slate-950 */
   --foreground: #f8fafc;   /* slate-50  */
-  --surface:    #0f172a;   /* slate-900 */
-  --surface-2:  #1e293b;   /* slate-800 */
-  --border:     #334155;   /* slate-700 */
-  --muted:      #94a3b8;   /* slate-400 */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans:       var(--font-sans);
+  --font-mono:       var(--font-mono);
+  --font-condensed:  var(--font-condensed);
 }
 
-html {
-  scroll-behavior: smooth;
-}
+/* ── Base ─────────────────────────────────────────────────────────────── */
+html { scroll-behavior: smooth; }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Utility: gradient text ───────────────────────────────────── */
+/* ── Condensed headings (the "Gym" typography) ────────────────────────── */
+h1, h2, h3 {
+  font-family: var(--font-condensed), var(--font-sans), sans-serif;
+}
+
+/* ── Gradient text utility ────────────────────────────────────────────── */
 .gradient-text {
   background: linear-gradient(135deg, #22d3ee 0%, #818cf8 100%);
   -webkit-background-clip: text;
@@ -38,10 +40,19 @@ body {
   background-clip: text;
 }
 
-/* ── Utility: card glow on hover ──────────────────────────────── */
-.card-glow-cyan:hover {
-  box-shadow: 0 0 24px rgba(34, 211, 238, 0.12);
+/* ── Node glow utilities (no-border Cyberpunk style) ─────────────────── */
+.glow-emerald {
+  box-shadow:
+    0 0 18px rgba(52, 211, 153, 0.55),
+    0 0 40px rgba(52, 211, 153, 0.20);
 }
-.card-glow-emerald {
-  box-shadow: 0 0 20px rgba(52, 211, 153, 0.12);
+.glow-cyan {
+  box-shadow:
+    0 0 16px rgba(34, 211, 238, 0.40),
+    0 0 36px rgba(34, 211, 238, 0.15);
+}
+.glow-cyan-hover:hover {
+  box-shadow:
+    0 0 24px rgba(34, 211, 238, 0.65),
+    0 0 52px rgba(34, 211, 238, 0.25);
 }
