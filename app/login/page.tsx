@@ -1,18 +1,37 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Eye, EyeOff, User, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import Button from '@/components/ui/Button';
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ username: '', password: '' });
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [form,         setForm]         = useState({ email: '', password: '' });
+  const [error,        setError]        = useState<string | null>(null);
+  const [loading,      setLoading]      = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Supabase Auth integration will be wired in the next prompt.
-    console.log('Login attempt:', form.username);
+    setError(null);
+    setLoading(true);
+
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email:    form.email.trim(),
+      password: form.password,
+    });
+
+    if (authError) {
+      setError('Wrong credentials. Check your email and password.');
+      setLoading(false);
+      return;
+    }
+
+    router.push('/skills');
   };
 
   return (
@@ -53,24 +72,32 @@ export default function LoginPage() {
             </div>
           </div>
 
+          {/* Error banner */}
+          {error && (
+            <div className="mb-5 flex items-center gap-2.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3.5 py-3 text-sm text-red-400">
+              <AlertCircle size={15} className="shrink-0" />
+              {error}
+            </div>
+          )}
+
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Username */}
+            {/* Email */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-slate-400">
-                Username
+                Email
               </label>
               <div className="relative">
-                <User
+                <Mail
                   size={15}
                   className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
                 />
                 <input
-                  type="text"
-                  autoComplete="username"
-                  placeholder="e.g. Rois"
-                  value={form.username}
-                  onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
+                  type="email"
+                  autoComplete="email"
+                  placeholder="e.g. rois@unlocked.app"
+                  value={form.email}
+                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                   required
                   className="w-full rounded-lg border border-slate-700 bg-slate-800 py-3 pl-10 pr-4 text-sm text-white placeholder:text-slate-600 transition-all focus:border-cyan-500/60 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
                 />
@@ -119,8 +146,14 @@ export default function LoginPage() {
             </div>
 
             {/* Submit */}
-            <Button variant="primary" size="md" type="submit" className="mt-2 w-full">
-              Sign In
+            <Button
+              variant="primary"
+              size="md"
+              type="submit"
+              className="mt-2 w-full"
+              disabled={loading}
+            >
+              {loading ? 'Signing in…' : 'Sign In'}
             </Button>
           </form>
 
