@@ -11,8 +11,11 @@ export interface Skill {
   description: string;
   category: SkillCategory;
   treeType: TreeType;
-  /** null = root / no prerequisite */
-  prerequisiteId: string | null;
+  /**
+   * DAG prerequisites — empty array means root skill (no dependencies).
+   * A skill is only 'available' when ALL prerequisiteIds are unlocked.
+   */
+  prerequisiteIds: string[];
   xp: number;
   difficulty: Difficulty;
 }

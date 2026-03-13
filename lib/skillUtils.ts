@@ -1,35 +1,67 @@
-import type { Skill, SkillCategory, SkillState } from '@/types';
+import type { Skill, SkillCategory, SkillState, TreeType, Difficulty } from '@/types';
 import type { NodePosition, TreeLayout } from '@/data/treeLayouts';
 
-// ── Skill state ──────────────────────────────────────────────────────────────
+// ── DB row types (snake_case, as returned by Supabase) ────────────────────────
+
+export type DbSkillRow = {
+  id:              string;
+  name:            string;
+  description:     string;
+  category:        string;
+  tree_type:       string;
+  xp:              number;
+  difficulty:      string;
+  video_guide_url: string | null;
+  written_tips:    string | null;
+};
+
+export type DbDependencyRow = {
+  skill_id:        string;
+  prerequisite_id: string;
+};
+
+// ── DB → domain model helpers ─────────────────────────────────────────────────
+
+/** Build a map of skillId → prerequisiteIds[] from raw dependency rows. */
+export function buildDepsMap(deps: DbDependencyRow[]): Map<string, string[]> {
+  const map = new Map<string, string[]>();
+  for (const d of deps) {
+    if (!map.has(d.skill_id)) map.set(d.skill_id, []);
+    map.get(d.skill_id)!.push(d.prerequisite_id);
+  }
+  return map;
+}
+
+/** Convert a DB row + deps map into the app's Skill domain object. */
+export function dbRowToSkill(row: DbSkillRow, depsMap: Map<string, string[]>): Skill {
+  return {
+    id:             row.id,
+    name:           row.name,
+    description:    row.description,
+    category:       row.category  as SkillCategory,
+    treeType:       row.tree_type as TreeType,
+    prerequisiteIds: depsMap.get(row.id) ?? [],
+    xp:             row.xp,
+    difficulty:     row.difficulty as Difficulty,
+  };
+}
+
+// ── Skill state (DAG-aware) ───────────────────────────────────────────────────
 
 /**
- * Derive the display state of a skill based on the user's progress.
- *  unlocked  — user has already verified this skill
- *  available — prerequisite met (or no prerequisite), ready to be claimed
- *  locked    — prerequisite not yet unlocked
+ * Derive the display state of a skill from the user's progress.
+ *
+ *  unlocked  — user has verified this skill
+ *  available — ALL prerequisites unlocked (or skill has none)
+ *  locked    — one or more prerequisites not yet unlocked
  */
 export function getSkillState(skill: Skill, unlockedIds: string[]): SkillState {
   if (unlockedIds.includes(skill.id)) return 'unlocked';
-  if (skill.prerequisiteId === null || unlockedIds.includes(skill.prerequisiteId)) {
-    return 'available';
-  }
+  if (skill.prerequisiteIds.every((id) => unlockedIds.includes(id))) return 'available';
   return 'locked';
 }
 
-/** Return skills in a category ordered root-first along the prerequisite chain. */
-export function getOrderedTrackSkills(skills: Skill[], category: SkillCategory): Skill[] {
-  const track = skills.filter((s) => s.category === category);
-  const result: Skill[] = [];
-  let current: Skill | undefined = track.find((s) => s.prerequisiteId === null);
-  while (current) {
-    result.push(current);
-    current = track.find((s) => s.prerequisiteId === current!.id);
-  }
-  return result;
-}
-
-// ── User stat helpers ────────────────────────────────────────────────────────
+// ── User stat helpers ─────────────────────────────────────────────────────────
 
 export function calcTotalXP(skills: Skill[], unlockedIds: string[]): number {
   return skills
@@ -52,7 +84,7 @@ export function calcAge(dob: string): number {
   return age;
 }
 
-// ── Tree connection helpers ──────────────────────────────────────────────────
+// ── Tree connection helpers ───────────────────────────────────────────────────
 
 export type ConnectionStyle = 'unlocked' | 'available' | 'locked';
 
@@ -65,49 +97,42 @@ export interface SkillConnection {
 }
 
 /**
- * Build the list of parent→child edge descriptors for rendering SVG lines.
- * Style is determined by the user's unlocked progress:
- *   unlocked  — both endpoints verified (glowing line)
- *   available — parent verified, child not yet (dashed dim line)
- *   locked    — parent not yet verified (very dim line)
+ * Build all directed edge descriptors for SVG rendering.
+ *
+ * One connection is emitted per prerequisite edge (N prerequisites → N edges).
+ * Each edge is styled independently based solely on its own from-node state,
+ * so when a DAG node has one met and one unmet prerequisite the two lines
+ * appear visually distinct.
  */
 export function buildConnections(
   skills: Skill[],
   layout: TreeLayout,
   unlockedIds: string[],
 ): SkillConnection[] {
-  return skills
-    .filter(
-      (s) =>
-        s.prerequisiteId !== null &&
-        layout[s.id] != null &&
-        layout[s.prerequisiteId!] != null,
-    )
-    .map((s) => {
-      const parentId = s.prerequisiteId!;
-      const style: ConnectionStyle =
-        unlockedIds.includes(parentId) && unlockedIds.includes(s.id)
-          ? 'unlocked'
-          : unlockedIds.includes(parentId)
-          ? 'available'
-          : 'locked';
-      return {
-        fromId: parentId,
-        toId: s.id,
-        from: layout[parentId],
-        to: layout[s.id],
-        style,
-      };
-    });
+  return skills.flatMap((skill) =>
+    skill.prerequisiteIds
+      .filter((prereqId) => layout[skill.id] != null && layout[prereqId] != null)
+      .map((prereqId): SkillConnection => {
+        const style: ConnectionStyle =
+          unlockedIds.includes(prereqId) && unlockedIds.includes(skill.id)
+            ? 'unlocked'
+            : unlockedIds.includes(prereqId)
+            ? 'available'
+            : 'locked';
+        return {
+          fromId: prereqId,
+          toId:   skill.id,
+          from:   layout[prereqId],
+          to:     layout[skill.id],
+          style,
+        };
+      }),
+  );
 }
 
 /**
- * Generate a quadratic Bézier SVG path string between two node centers.
- *
- * - Starts/ends at the circle perimeter (not the center) to avoid the line
- *   being hidden beneath the node circle.
- * - Control point is the segment midpoint pulled `curveFactor` of the way
- *   toward the tree center, producing a gentle inward curve.
+ * Quadratic Bézier SVG path between two node centers.
+ * Terminates at circle perimeter, curves gently toward tree center.
  */
 export function buildSvgPath(
   from: NodePosition,
@@ -123,16 +148,13 @@ export function buildSvgPath(
 
   const nx = dx / dist;
   const ny = dy / dist;
-
-  // Edge points — start/end at circle perimeter
   const sx = from.x + nx * nodeRadius;
   const sy = from.y + ny * nodeRadius;
-  const ex = to.x - nx * nodeRadius;
-  const ey = to.y - ny * nodeRadius;
+  const ex = to.x  - nx * nodeRadius;
+  const ey = to.y  - ny * nodeRadius;
 
-  // Control point — midpoint pulled toward tree center
-  const mx = (sx + ex) / 2;
-  const my = (sy + ey) / 2;
+  const mx  = (sx + ex) / 2;
+  const my  = (sy + ey) / 2;
   const cpx = mx + (center.x - mx) * curveFactor;
   const cpy = my + (center.y - my) * curveFactor;
 
