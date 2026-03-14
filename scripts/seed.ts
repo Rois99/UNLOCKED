@@ -26,31 +26,31 @@ const supabase = createClient(url, serviceRoleKey, {
 
 const SKILLS = [
   // Calisthenics · Pull
-  { id: '30_pullups',           name: '30 Pull-ups',            description: 'Complete 30 consecutive pull-ups with full range of motion.',      category: 'pull',     tree_type: 'calisthenics', xp: 500,  difficulty: 'intermediate' },
-  { id: 'weighted_pullup',      name: 'Weighted Pull-up +20kg', description: 'Complete 5 strict pull-ups with 20 kg of added weight.',            category: 'pull',     tree_type: 'calisthenics', xp: 1000, difficulty: 'advanced' },
-  { id: '1_oap',                name: 'One-Arm Pull-up',        description: 'Complete a strict one-arm pull-up on both arms.',                   category: 'pull',     tree_type: 'calisthenics', xp: 2000, difficulty: 'elite' },
-  { id: '2_oap',                name: '2× One-Arm Pull-ups',    description: 'Complete 2 consecutive OAPs on each arm.',                          category: 'pull',     tree_type: 'calisthenics', xp: 4000, difficulty: 'elite' },
+  { id: '30_pullups',           name: '30 Pull-ups',            description: 'Complete 30 consecutive pull-ups with full range of motion.',      category: 'pull',     tree_type: 'calisthenics', xp: 500,  difficulty: 'intermediate', requirement_type: 'AND' },
+  { id: 'weighted_pullup',      name: 'Weighted Pull-up +20kg', description: 'Complete 5 strict pull-ups with 20 kg of added weight.',            category: 'pull',     tree_type: 'calisthenics', xp: 1000, difficulty: 'advanced',      requirement_type: 'AND' },
+  { id: '1_oap',                name: 'One-Arm Pull-up',        description: 'Complete a strict one-arm pull-up on both arms.',                   category: 'pull',     tree_type: 'calisthenics', xp: 2000, difficulty: 'elite',          requirement_type: 'AND' },
+  { id: '2_oap',                name: '2× One-Arm Pull-ups',    description: 'Complete 2 consecutive OAPs on each arm.',                          category: 'pull',     tree_type: 'calisthenics', xp: 4000, difficulty: 'elite',          requirement_type: 'AND' },
   // Calisthenics · Push
-  { id: '50_dips',              name: '50 Dips',                description: 'Complete 50 consecutive parallel bar dips.',                        category: 'push',     tree_type: 'calisthenics', xp: 500,  difficulty: 'intermediate' },
-  { id: 'wall_handstand',       name: 'Wall Handstand 30s',     description: 'Hold a straight-body wall handstand for 30 seconds.',               category: 'push',     tree_type: 'calisthenics', xp: 600,  difficulty: 'intermediate' },
-  { id: '1_hspu',               name: 'Handstand Push-up',      description: 'Complete a full strict HSPU against a wall.',                       category: 'push',     tree_type: 'calisthenics', xp: 1500, difficulty: 'advanced' },
-  { id: 'freestanding_hspu',    name: 'Freestanding HSPU',      description: 'Complete a HSPU in a freestanding handstand.',                      category: 'push',     tree_type: 'calisthenics', xp: 3000, difficulty: 'elite' },
+  { id: '50_dips',              name: '50 Dips',                description: 'Complete 50 consecutive parallel bar dips.',                        category: 'push',     tree_type: 'calisthenics', xp: 500,  difficulty: 'intermediate', requirement_type: 'AND' },
+  { id: 'wall_handstand',       name: 'Wall Handstand 30s',     description: 'Hold a straight-body wall handstand for 30 seconds.',               category: 'push',     tree_type: 'calisthenics', xp: 600,  difficulty: 'intermediate', requirement_type: 'AND' },
+  { id: '1_hspu',               name: 'Handstand Push-up',      description: 'Complete a full strict HSPU against a wall.',                       category: 'push',     tree_type: 'calisthenics', xp: 1500, difficulty: 'advanced',      requirement_type: 'AND' },
+  { id: 'freestanding_hspu',    name: 'Freestanding HSPU',      description: 'Complete a HSPU in a freestanding handstand.',                      category: 'push',     tree_type: 'calisthenics', xp: 3000, difficulty: 'elite',          requirement_type: 'AND' },
   // Calisthenics · Lever
-  { id: 'tuck_front_lever_10s', name: 'Tuck Front Lever 10s',   description: 'Hold a tuck front lever position for 10 seconds.',                  category: 'lever',    tree_type: 'calisthenics', xp: 800,  difficulty: 'intermediate' },
-  { id: 'adv_tuck_front_lever', name: 'Adv. Tuck Front Lever',  description: 'Hold an advanced tuck front lever for 10 seconds.',                 category: 'lever',    tree_type: 'calisthenics', xp: 1200, difficulty: 'advanced' },
-  { id: 'full_front_lever',     name: 'Full Front Lever 5s',    description: 'Hold a full front lever position for 5 seconds.',                   category: 'lever',    tree_type: 'calisthenics', xp: 2500, difficulty: 'elite' },
+  { id: 'tuck_front_lever_10s', name: 'Tuck Front Lever 10s',   description: 'Hold a tuck front lever position for 10 seconds.',                  category: 'lever',    tree_type: 'calisthenics', xp: 800,  difficulty: 'intermediate', requirement_type: 'AND' },
+  { id: 'adv_tuck_front_lever', name: 'Adv. Tuck Front Lever',  description: 'Hold an advanced tuck front lever for 10 seconds.',                 category: 'lever',    tree_type: 'calisthenics', xp: 1200, difficulty: 'advanced',      requirement_type: 'AND' },
+  { id: 'full_front_lever',     name: 'Full Front Lever 5s',    description: 'Hold a full front lever for 5 seconds. Requires adv. tuck lever OR 2× OAP.', category: 'lever', tree_type: 'calisthenics', xp: 2500, difficulty: 'elite', requirement_type: 'OR'  },
   // Gym · Squat
-  { id: 'squat_100',            name: 'Squat 100 kg',           description: 'Complete a 1-rep max back squat of 100 kg.',                        category: 'squat',    tree_type: 'gym',          xp: 600,  difficulty: 'intermediate' },
-  { id: 'squat_140',            name: 'Squat 140 kg',           description: 'Complete a 1-rep max back squat of 140 kg.',                        category: 'squat',    tree_type: 'gym',          xp: 1400, difficulty: 'advanced' },
-  { id: 'squat_180',            name: 'Squat 180 kg',           description: 'Complete a 1-rep max back squat of 180 kg.',                        category: 'squat',    tree_type: 'gym',          xp: 3000, difficulty: 'elite' },
+  { id: 'squat_100',            name: 'Squat 100 kg',           description: 'Complete a 1-rep max back squat of 100 kg.',                        category: 'squat',    tree_type: 'gym',          xp: 600,  difficulty: 'intermediate', requirement_type: 'AND' },
+  { id: 'squat_140',            name: 'Squat 140 kg',           description: 'Complete a 1-rep max back squat of 140 kg.',                        category: 'squat',    tree_type: 'gym',          xp: 1400, difficulty: 'advanced',      requirement_type: 'AND' },
+  { id: 'squat_180',            name: 'Squat 180 kg',           description: 'Complete a 1-rep max back squat of 180 kg.',                        category: 'squat',    tree_type: 'gym',          xp: 3000, difficulty: 'elite',          requirement_type: 'AND' },
   // Gym · Bench
-  { id: 'bench_80',             name: 'Bench Press 80 kg',      description: 'Complete a 1-rep max bench press of 80 kg.',                        category: 'bench',    tree_type: 'gym',          xp: 500,  difficulty: 'intermediate' },
-  { id: 'bench_120',            name: 'Bench Press 120 kg',     description: 'Complete a 1-rep max bench press of 120 kg.',                       category: 'bench',    tree_type: 'gym',          xp: 1200, difficulty: 'advanced' },
-  { id: 'bench_160',            name: 'Bench Press 160 kg',     description: 'Complete a 1-rep max bench press of 160 kg.',                       category: 'bench',    tree_type: 'gym',          xp: 2800, difficulty: 'elite' },
+  { id: 'bench_80',             name: 'Bench Press 80 kg',      description: 'Complete a 1-rep max bench press of 80 kg.',                        category: 'bench',    tree_type: 'gym',          xp: 500,  difficulty: 'intermediate', requirement_type: 'AND' },
+  { id: 'bench_120',            name: 'Bench Press 120 kg',     description: 'Complete a 1-rep max bench press of 120 kg.',                       category: 'bench',    tree_type: 'gym',          xp: 1200, difficulty: 'advanced',      requirement_type: 'AND' },
+  { id: 'bench_160',            name: 'Bench Press 160 kg',     description: 'Complete a 1-rep max bench press of 160 kg.',                       category: 'bench',    tree_type: 'gym',          xp: 2800, difficulty: 'elite',          requirement_type: 'AND' },
   // Gym · Deadlift
-  { id: 'dead_140',             name: 'Deadlift 140 kg',        description: 'Complete a 1-rep max deadlift of 140 kg.',                          category: 'deadlift', tree_type: 'gym',          xp: 700,  difficulty: 'intermediate' },
-  { id: 'dead_200',             name: 'Deadlift 200 kg',        description: 'Complete a 1-rep max deadlift of 200 kg.',                          category: 'deadlift', tree_type: 'gym',          xp: 1800, difficulty: 'advanced' },
-  { id: 'dead_250',             name: 'Deadlift 250 kg',        description: 'Complete a 1-rep max deadlift of 250 kg.',                          category: 'deadlift', tree_type: 'gym',          xp: 3500, difficulty: 'elite' },
+  { id: 'dead_140',             name: 'Deadlift 140 kg',        description: 'Complete a 1-rep max deadlift of 140 kg.',                          category: 'deadlift', tree_type: 'gym',          xp: 700,  difficulty: 'intermediate', requirement_type: 'AND' },
+  { id: 'dead_200',             name: 'Deadlift 200 kg',        description: 'Complete a 1-rep max deadlift of 200 kg.',                          category: 'deadlift', tree_type: 'gym',          xp: 1800, difficulty: 'advanced',      requirement_type: 'AND' },
+  { id: 'dead_250',             name: 'Deadlift 250 kg',        description: 'Complete a 1-rep max deadlift of 250 kg.',                          category: 'deadlift', tree_type: 'gym',          xp: 3500, difficulty: 'elite',          requirement_type: 'AND' },
 ];
 
 // ── DAG dependency graph ──────────────────────────────────────────────────────
@@ -67,9 +67,10 @@ const SKILL_DEPENDENCIES = [
   { skill_id: '1_hspu',              prerequisite_id: '50_dips' },
   { skill_id: '1_hspu',              prerequisite_id: 'wall_handstand' },   // ← multi-prereq
   { skill_id: 'freestanding_hspu',   prerequisite_id: '1_hspu' },
-  // Lever chain
+  // Lever chain — full_front_lever uses OR: adv_tuck_front_lever OR 2_oap (cross-branch)
   { skill_id: 'adv_tuck_front_lever', prerequisite_id: 'tuck_front_lever_10s' },
   { skill_id: 'full_front_lever',    prerequisite_id: 'adv_tuck_front_lever' },
+  { skill_id: 'full_front_lever',    prerequisite_id: '2_oap' },             // ← OR path
   // Gym — Squat
   { skill_id: 'squat_140',           prerequisite_id: 'squat_100' },
   { skill_id: 'squat_180',           prerequisite_id: 'squat_140' },

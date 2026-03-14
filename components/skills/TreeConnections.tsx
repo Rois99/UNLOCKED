@@ -36,8 +36,16 @@ export default function TreeConnections({
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-        {/* Cyan glow — available paths */}
+        {/* Cyan glow — available AND paths */}
         <filter id="tc-cyan-glow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="2.5" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        {/* Amber glow — available OR paths */}
+        <filter id="tc-amber-glow" x="-60%" y="-60%" width="220%" height="220%">
           <feGaussianBlur stdDeviation="2.5" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
@@ -75,27 +83,30 @@ export default function TreeConnections({
         }
 
         if (conn.style === 'available') {
+          const stroke = conn.isOr ? '#f59e0b' : '#22d3ee';
+          const filter = conn.isOr ? 'url(#tc-amber-glow)' : 'url(#tc-cyan-glow)';
           return (
             <g key={i}>
               <path
                 d={d}
-                stroke="#22d3ee"
+                stroke={stroke}
                 strokeWidth={1.5}
-                opacity={0.35}
+                opacity={0.45}
                 fill="none"
                 strokeDasharray="7 5"
-                filter="url(#tc-cyan-glow)"
+                filter={filter}
               />
             </g>
           );
         }
 
         // locked
+        const stroke = conn.isOr ? '#92400e' : '#1e293b';
         return (
           <g key={i}>
             <path
               d={d}
-              stroke="#1e293b"
+              stroke={stroke}
               strokeWidth={1.5}
               opacity={0.55}
               fill="none"

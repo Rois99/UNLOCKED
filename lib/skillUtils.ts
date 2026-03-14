@@ -1,18 +1,19 @@
-import type { Skill, SkillCategory, SkillState, TreeType, Difficulty } from '@/types';
+import type { Skill, SkillCategory, SkillState, TreeType, Difficulty, RequirementType } from '@/types';
 import type { NodePosition, TreeLayout } from '@/data/treeLayouts';
 
 // ── DB row types (snake_case, as returned by Supabase) ────────────────────────
 
 export type DbSkillRow = {
-  id:              string;
-  name:            string;
-  description:     string;
-  category:        string;
-  tree_type:       string;
-  xp:              number;
-  difficulty:      string;
-  video_guide_url: string | null;
-  written_tips:    string | null;
+  id:               string;
+  name:             string;
+  description:      string;
+  category:         string;
+  tree_type:        string;
+  xp:               number;
+  difficulty:       string;
+  requirement_type: string;   // 'AND' | 'OR'
+  video_guide_url:  string | null;
+  written_tips:     string | null;
 };
 
 export type DbDependencyRow = {
@@ -35,30 +36,39 @@ export function buildDepsMap(deps: DbDependencyRow[]): Map<string, string[]> {
 /** Convert a DB row + deps map into the app's Skill domain object. */
 export function dbRowToSkill(row: DbSkillRow, depsMap: Map<string, string[]>): Skill {
   return {
-    id:             row.id,
-    name:           row.name,
-    description:    row.description,
-    category:       row.category  as SkillCategory,
-    treeType:       row.tree_type as TreeType,
+    id:              row.id,
+    name:            row.name,
+    description:     row.description,
+    category:        row.category        as SkillCategory,
+    treeType:        row.tree_type       as TreeType,
     prerequisiteIds: depsMap.get(row.id) ?? [],
-    xp:             row.xp,
-    difficulty:     row.difficulty as Difficulty,
+    requirementType: (row.requirement_type ?? 'AND') as RequirementType,
+    xp:              row.xp,
+    difficulty:      row.difficulty      as Difficulty,
   };
 }
 
-// ── Skill state (DAG-aware) ───────────────────────────────────────────────────
+// ── Skill state ───────────────────────────────────────────────────────────────
 
 /**
- * Derive the display state of a skill from the user's progress.
+ * Derive the display state of a skill.
  *
  *  unlocked  — user has verified this skill
- *  available — ALL prerequisites unlocked (or skill has none)
- *  locked    — one or more prerequisites not yet unlocked
+ *  available — prerequisites satisfied per requirementType:
+ *               AND → every prerequisite unlocked
+ *               OR  → at least one prerequisite unlocked (or none required)
+ *  locked    — prerequisites not satisfied
  */
 export function getSkillState(skill: Skill, unlockedIds: string[]): SkillState {
   if (unlockedIds.includes(skill.id)) return 'unlocked';
-  if (skill.prerequisiteIds.every((id) => unlockedIds.includes(id))) return 'available';
-  return 'locked';
+
+  if (skill.prerequisiteIds.length === 0) return 'available';
+
+  const satisfied = skill.requirementType === 'OR'
+    ? skill.prerequisiteIds.some((id)  => unlockedIds.includes(id))
+    : skill.prerequisiteIds.every((id) => unlockedIds.includes(id));
+
+  return satisfied ? 'available' : 'locked';
 }
 
 // ── User stat helpers ─────────────────────────────────────────────────────────
@@ -89,20 +99,26 @@ export function calcAge(dob: string): number {
 export type ConnectionStyle = 'unlocked' | 'available' | 'locked';
 
 export interface SkillConnection {
-  fromId: string;
-  toId:   string;
-  from:   NodePosition;
-  to:     NodePosition;
-  style:  ConnectionStyle;
+  fromId:          string;
+  toId:            string;
+  from:            NodePosition;
+  to:              NodePosition;
+  style:           ConnectionStyle;
+  /** True when the destination skill uses OR requirement logic. */
+  isOr:            boolean;
 }
 
 /**
  * Build all directed edge descriptors for SVG rendering.
  *
- * One connection is emitted per prerequisite edge (N prerequisites → N edges).
- * Each edge is styled independently based solely on its own from-node state,
- * so when a DAG node has one met and one unmet prerequisite the two lines
- * appear visually distinct.
+ * One connection is emitted per prerequisite edge.
+ * Each edge carries an `isOr` flag so TreeConnections can render
+ * OR-path edges in amber to distinguish them from AND-path cyan edges.
+ *
+ * Edge style logic (same for AND and OR — per-edge, not per-skill):
+ *   unlocked  — both endpoints verified
+ *   available — from-node verified, to-node not yet
+ *   locked    — from-node not yet verified
  */
 export function buildConnections(
   skills: Skill[],
@@ -125,6 +141,7 @@ export function buildConnections(
           from:   layout[prereqId],
           to:     layout[skill.id],
           style,
+          isOr:   skill.requirementType === 'OR',
         };
       }),
   );

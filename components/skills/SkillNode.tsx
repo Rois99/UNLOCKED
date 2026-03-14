@@ -36,6 +36,7 @@ const STATE_STYLES: Record<SkillState, {
 export default function SkillNode({ skill, state, onClick }: SkillNodeProps) {
   const s = STATE_STYLES[state];
   const Icon = s.icon;
+  const showOrBadge = skill.requirementType === 'OR' && skill.prerequisiteIds.length > 1;
 
   return (
     <button
@@ -45,14 +46,21 @@ export default function SkillNode({ skill, state, onClick }: SkillNodeProps) {
       className="group flex flex-col items-center gap-2 focus:outline-none"
     >
       {/* Circle */}
-      <div
-        className={`
-          flex h-16 w-16 items-center justify-center rounded-full
-          transition-all duration-300
-          ${s.circle}
-        `}
-      >
-        <Icon size={24} className={s.iconClass} />
+      <div className="relative">
+        <div
+          className={`
+            flex h-16 w-16 items-center justify-center rounded-full
+            transition-all duration-300
+            ${s.circle}
+          `}
+        >
+          <Icon size={24} className={s.iconClass} />
+        </div>
+        {showOrBadge && (
+          <span className="absolute -top-1 -right-1 rounded-full bg-amber-500 px-1.5 py-0.5 text-[8px] font-black uppercase leading-none tracking-wider text-slate-950">
+            OR
+          </span>
+        )}
       </div>
 
       {/* Label */}

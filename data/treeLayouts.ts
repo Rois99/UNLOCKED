@@ -36,7 +36,7 @@ const CATEGORY_ANGLE: Record<string, number> = {
 const DEPTH_RADII = [190, 285, 380, 475, 570] as const;
 
 /** Angular gap between sibling nodes placed at the same (category, depth). */
-const SIBLING_SPREAD_DEG = 20;
+const SIBLING_SPREAD_DEG = 50;
 
 // ── Core primitive ────────────────────────────────────────────────────────────
 
