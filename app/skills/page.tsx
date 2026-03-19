@@ -1,6 +1,8 @@
 import { Star } from 'lucide-react';
+import { redirect } from 'next/navigation';
 import AppNavbar    from '@/components/app/AppNavbar';
 import SkillsClient from '@/components/skills/SkillsClient';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import type { DbSkillRow, DbDependencyRow } from '@/lib/skillUtils';
 import { calcLevel } from '@/lib/skillUtils';
@@ -9,25 +11,25 @@ export const dynamic  = 'force-dynamic';
 export const metadata = { title: 'Skill Tree — UNLOCKED' };
 
 export default async function SkillsPage() {
+  // ── Resolve authenticated user ───────────────────────────────────────────
+  const serverClient = await createSupabaseServerClient();
+  const { data: { user } } = await serverClient.auth.getUser();
+  if (!user) redirect('/login');
+
   // ── Fetch all skills, dependency edges, and current user's progress ─────
   const [
-    { data: skills    = [] },
-    { data: deps      = [] },
-    { data: profile },
+    { data: skills = [] },
+    { data: deps   = [] },
   ] = await Promise.all([
     supabaseAdmin.from('skills').select('*').order('xp'),
     supabaseAdmin.from('skill_dependencies').select('skill_id, prerequisite_id'),
-    supabaseAdmin.from('profiles').select('id').eq('email', 'rois@unlocked.app').single(),
   ]);
 
-  const unlockedSkillIds: string[] = [];
-  if (profile) {
-    const { data: unlocked = [] } = await supabaseAdmin
-      .from('user_unlocked_skills')
-      .select('skill_id')
-      .eq('user_id', profile.id);
-    unlockedSkillIds.push(...(unlocked ?? []).map((r: { skill_id: string }) => r.skill_id));
-  }
+  const { data: unlockedRows = [] } = await supabaseAdmin
+    .from('user_unlocked_skills')
+    .select('skill_id')
+    .eq('user_id', user.id);
+  const unlockedSkillIds = (unlockedRows ?? []).map((r: { skill_id: string }) => r.skill_id);
 
   // ── XP header stats ──────────────────────────────────────────────────────
   const totalXP    = (skills as DbSkillRow[])

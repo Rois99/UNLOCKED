@@ -1,7 +1,10 @@
-import { Ruler, Weight, Calendar, Activity, Trophy, Star, MapPin, BookOpen } from 'lucide-react';
+import { Ruler, Weight, Calendar, Activity, Trophy, Star, MapPin, BookOpen, Instagram, Edit3 } from 'lucide-react';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import AppNavbar from '@/components/app/AppNavbar';
 import StatCard from '@/components/profile/StatCard';
 import TrophyCard from '@/components/profile/TrophyCard';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { calcAge, calcLevel } from '@/lib/skillUtils';
 
@@ -23,32 +26,37 @@ type UnlockedSkillRow = {
 };
 
 type ProfileRow = {
-  id:        string;
-  username:  string;
-  email:     string;
-  height_m:  number | null;
-  weight_kg: number | null;
-  dob:       string | null;
-  bio:       string | null;
-  location:  string | null;
-  is_coach:  boolean;
-  joined_at: string;
+  id:               string;
+  username:         string;
+  email:            string;
+  height_m:         number | null;
+  weight_kg:        number | null;
+  dob:              string | null;
+  bio:              string | null;
+  location:         string | null;
+  is_coach:         boolean;
+  joined_at:        string;
+  instagram_handle: string | null;
+  gender:           string | null;
+  country:          string | null;
+  motivation_quote: string | null;
   user_unlocked_skills: UnlockedSkillRow[];
 };
 
 // ── Data fetching ─────────────────────────────────────────────────────────────
 
-async function getProfile(): Promise<ProfileRow | null> {
+async function getProfile(userId: string): Promise<ProfileRow | null> {
   const { data, error } = await supabaseAdmin
     .from('profiles')
     .select(`
       id, username, email, height_m, weight_kg, dob, bio, location, is_coach, joined_at,
+      instagram_handle, gender, country, motivation_quote,
       user_unlocked_skills (
         skill_id, unlocked_at,
         skills ( name, xp, category, tree_type, difficulty )
       )
     `)
-    .eq('email', 'rois@unlocked.app')
+    .eq('id', userId)
     .single();
 
   if (error) {
@@ -61,7 +69,11 @@ async function getProfile(): Promise<ProfileRow | null> {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function ProfilePage() {
-  const profile = await getProfile();
+  const serverClient = await createSupabaseServerClient();
+  const { data: { user } } = await serverClient.auth.getUser();
+  if (!user) redirect('/login');
+
+  const profile = await getProfile(user.id);
 
   if (!profile) {
     return (
@@ -112,8 +124,19 @@ export default async function ProfilePage() {
             </div>
 
             {/* Name, handle, meta */}
-            <h1 className="text-3xl font-black text-white">{profile.username}</h1>
-            <p className="text-sm text-slate-400">@{profile.username.toLowerCase()}</p>
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-3xl font-black text-white">{profile.username}</h1>
+                <p className="text-sm text-slate-400">@{profile.username.toLowerCase()}</p>
+              </div>
+              <Link
+                href="/profile/edit"
+                className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 transition-colors hover:border-cyan-500/50 hover:text-cyan-400"
+              >
+                <Edit3 size={12} />
+                Edit Profile
+              </Link>
+            </div>
 
             {profile.location && (
               <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
@@ -122,11 +145,29 @@ export default async function ProfilePage() {
               </p>
             )}
 
+            {profile.instagram_handle && (
+              <a
+                href={`https://instagram.com/${profile.instagram_handle.replace(/^@/, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 flex items-center gap-1 text-xs text-pink-400 transition-colors hover:text-pink-300"
+              >
+                <Instagram size={11} />
+                @{profile.instagram_handle.replace(/^@/, '')}
+              </a>
+            )}
+
             {profile.bio && (
               <p className="mt-2 flex items-start gap-1.5 text-xs text-slate-400">
                 <BookOpen size={11} className="mt-0.5 shrink-0 text-slate-500" />
                 {profile.bio}
               </p>
+            )}
+
+            {profile.motivation_quote && (
+              <blockquote className="mt-2 border-l-2 border-cyan-500/40 pl-3 text-xs italic text-slate-500">
+                "{profile.motivation_quote}"
+              </blockquote>
             )}
 
             <p className="mt-1 text-xs text-slate-600">

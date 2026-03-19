@@ -28,14 +28,18 @@ export interface Skill {
 }
 
 export interface User {
-  id:              string;
-  username:        string;
-  email:           string;
-  heightM:         number;
-  weightKg:        number;
+  id:               string;
+  username:         string;
+  email:            string;
+  heightM:          number;
+  weightKg:         number;
   /** ISO date 'YYYY-MM-DD' */
-  dob:             string;
+  dob:              string;
   unlockedSkillIds: string[];
-  avatarUrl?:      string;
-  joinedAt:        string;
+  avatarUrl?:       string;
+  joinedAt:         string;
+  instagramHandle?: string;
+  gender?:          string;
+  country?:         string;
+  motivationQuote?: string;
 }
