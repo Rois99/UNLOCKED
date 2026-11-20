@@ -5,6 +5,8 @@ interface SkillNodeProps {
   skill: Skill;
   state: SkillState;
   onClick?: () => void;
+  /** Text of the OR badge in the user's language. */
+  orLabel?: string;
 }
 
 const STATE_STYLES: Record<SkillState, {
@@ -33,7 +35,7 @@ const STATE_STYLES: Record<SkillState, {
   },
 };
 
-export default function SkillNode({ skill, state, onClick }: SkillNodeProps) {
+export default function SkillNode({ skill, state, onClick, orLabel = 'OR' }: SkillNodeProps) {
   const s = STATE_STYLES[state];
   const Icon = s.icon;
   const showOrBadge = skill.requirementType === 'OR' && skill.prerequisiteIds.length > 1;
@@ -58,7 +60,7 @@ export default function SkillNode({ skill, state, onClick }: SkillNodeProps) {
         </div>
         {showOrBadge && (
           <span className="absolute -top-1 -right-1 rounded-full bg-amber-500 px-1.5 py-0.5 text-[8px] font-black uppercase leading-none tracking-wider text-slate-950">
-            OR
+            {orLabel}
           </span>
         )}
       </div>

@@ -6,15 +6,20 @@ import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import type { DbSkillRow, DbDependencyRow } from '@/lib/skillUtils';
 import { calcLevel } from '@/lib/skillUtils';
+import { getI18n } from '@/lib/i18n/server';
+import { localName } from '@/lib/i18n/dictionaries';
 
 export const dynamic  = 'force-dynamic';
-export const metadata = { title: 'Skill Tree — UNLOCKED' };
+export const metadata = { title: 'UNLOCKED' };
 
 export default async function SkillsPage() {
   // ── Resolve authenticated user ───────────────────────────────────────────
   const serverClient = await createSupabaseServerClient();
   const { data: { user } } = await serverClient.auth.getUser();
   if (!user) redirect('/login');
+
+  const { locale, t } = await getI18n();
+  const ts = t.skillsPage;
 
   // ── Fetch all skills, dependency edges, and current user's progress ─────
   const [
@@ -41,7 +46,7 @@ export default async function SkillsPage() {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <AppNavbar />
+      <AppNavbar labels={t.nav} />
 
       <main className="mx-auto max-w-3xl px-6 pt-28 pb-20 space-y-10">
         {/* ── Header ────────────────────────────────────────────────── */}
@@ -50,16 +55,15 @@ export default async function SkillsPage() {
             className="text-5xl font-black uppercase tracking-tight text-white sm:text-6xl"
             style={{ fontFamily: 'var(--font-condensed)' }}
           >
-            Skill Tree
+            {ts.title}
           </h1>
           <p className="text-slate-400 max-w-sm text-sm">
-            Click a <span className="text-cyan-400 font-semibold">glowing node</span> to
-            submit proof and unlock the skill.
+            {ts.hintStart}<span className="text-cyan-400 font-semibold">{ts.hintNode}</span>{ts.hintEnd}
           </p>
 
           <div className="w-full max-w-xs">
             <div className="mb-1.5 flex justify-between text-xs">
-              <span className="font-semibold text-slate-400">Level {level}</span>
+              <span className="font-semibold text-slate-400">{ts.level(level)}</span>
               <span className="flex items-center gap-1 font-bold text-amber-400">
                 <Star size={11} fill="currentColor" />
                 {totalXP.toLocaleString()} XP
@@ -76,9 +80,10 @@ export default async function SkillsPage() {
 
         {/* ── Skill tree client island ───────────────────────────────── */}
         <SkillsClient
-          allSkills={skills        as DbSkillRow[]}
+          allSkills={(skills as (DbSkillRow & { name_he?: string | null })[]).map((s) => ({ ...s, name: localName(s, locale) }))}
           allDeps={deps            as DbDependencyRow[]}
           unlockedSkillIds={unlockedSkillIds}
+          labels={{ dragHint: ts.dragHint, or: ts.or }}
         />
       </main>
     </div>

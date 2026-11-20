@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import Button from '@/components/ui/Button';
+import { setLocaleCookie } from '@/lib/i18n/client';
+import { isLocale } from '@/lib/i18n/dictionaries';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,7 +23,7 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
+    const { data: signIn, error: authError } = await supabase.auth.signInWithPassword({
       email:    form.email.trim(),
       password: form.password,
     });
@@ -32,7 +34,16 @@ export default function LoginPage() {
       return;
     }
 
-    router.push('/skills');
+    // Render the app in the language saved on the user's profile.
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('language')
+      .eq('id', signIn.user.id)
+      .single();
+    if (isLocale(profile?.language)) setLocaleCookie(profile.language);
+
+    router.push('/today');
+    router.refresh();
   };
 
   return (

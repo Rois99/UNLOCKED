@@ -12,12 +12,14 @@ interface TreeViewportProps {
   canvasWidth:  number;
   canvasHeight: number;
   children: React.ReactNode;
+  hint?: string;
 }
 
 export default function TreeViewport({
   canvasWidth,
   canvasHeight,
   children,
+  hint = 'Drag to pan · Scroll to zoom',
 }: TreeViewportProps) {
   const containerRef  = useRef<HTMLDivElement>(null);
   const lastDistRef   = useRef(0);       // pinch distance from previous frame
@@ -159,12 +161,15 @@ export default function TreeViewport({
       {/* ── Viewport ────────────────────────────────────────────────── */}
       <div
         ref={containerRef}
+        // The tree is a positioned drawing, not text: keep its geometry
+        // left-to-right even on Hebrew pages (labels still render RTL).
+        dir="ltr"
         className="relative overflow-hidden rounded-2xl bg-slate-950/40"
         style={{ height: 620, touchAction: 'none' }}
       >
         {/* Hint */}
         <p className="pointer-events-none absolute top-3 left-1/2 z-10 -translate-x-1/2 select-none text-[11px] text-slate-600">
-          Drag to pan&nbsp;·&nbsp;Scroll to zoom
+          {hint}
         </p>
 
         {/* Draggable canvas — drag disabled while pinching to prevent drift */}

@@ -5,7 +5,6 @@ import type { Skill, TreeType } from '@/types';
 import type { DbSkillRow, DbDependencyRow } from '@/lib/skillUtils';
 import { buildDepsMap, dbRowToSkill, getSkillState } from '@/lib/skillUtils';
 import { computeLayout, CANVAS_SIZE, TREE_CENTER } from '@/data/treeLayouts';
-import TreeSwitcher     from './TreeSwitcher';
 import TreeViewport     from './TreeViewport';
 import RadialSkillTree  from './RadialSkillTree';
 import UploadProofModal from './UploadProofModal';
@@ -14,14 +13,18 @@ interface SkillsClientProps {
   allSkills:        DbSkillRow[];
   allDeps:          DbDependencyRow[];
   unlockedSkillIds: string[];
+  labels:           { dragHint: string; or: string };
 }
 
 export default function SkillsClient({
   allSkills,
   allDeps,
   unlockedSkillIds,
+  labels,
 }: SkillsClientProps) {
-  const [treeType,     setTreeType]     = useState<TreeType>('calisthenics');
+  // Pilot scope is calisthenics only; the gym tree stays in the data but is
+  // not shown. Re-enable by restoring <TreeSwitcher> (components/skills/TreeSwitcher.tsx).
+  const treeType: TreeType = 'calisthenics';
   const [pendingSkill, setPendingSkill] = useState<Skill | null>(null);
 
   // Build the deps map once — shared across both tree types
@@ -47,15 +50,11 @@ export default function SkillsClient({
 
   return (
     <>
-      {/* Tree switcher */}
-      <div className="flex justify-center">
-        <TreeSwitcher value={treeType} onChange={setTreeType} />
-      </div>
-
       {/* Pan / zoom viewport */}
       <TreeViewport
         canvasWidth={CANVAS_SIZE.width}
         canvasHeight={CANVAS_SIZE.height}
+        hint={labels.dragHint}
       >
         <RadialSkillTree
           skills={treeSkills}
@@ -66,6 +65,7 @@ export default function SkillsClient({
           unlockedIds={unlockedSkillIds}
           getState={(skill) => getSkillState(skill, unlockedSkillIds)}
           onSkillClick={setPendingSkill}
+          orLabel={labels.or}
         />
       </TreeViewport>
 

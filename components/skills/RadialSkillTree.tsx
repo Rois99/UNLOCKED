@@ -13,6 +13,7 @@ interface RadialSkillTreeProps {
   unlockedIds:  string[];
   getState:     (skill: Skill) => SkillState;
   onSkillClick: (skill: Skill) => void;
+  orLabel?:     string;
 }
 
 export default function RadialSkillTree({
@@ -24,6 +25,7 @@ export default function RadialSkillTree({
   unlockedIds,
   getState,
   onSkillClick,
+  orLabel,
 }: RadialSkillTreeProps) {
   // Compute connections from skill graph + layout positions.
   // This is pure data — no DOM interaction.
@@ -76,6 +78,7 @@ export default function RadialSkillTree({
             }}
           >
             <SkillNode
+              orLabel={orLabel}
               skill={skill}
               state={state}
               onClick={

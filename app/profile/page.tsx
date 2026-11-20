@@ -1,4 +1,4 @@
-import { Ruler, Weight, Calendar, Activity, Trophy, Star, MapPin, BookOpen, Instagram, Edit3 } from 'lucide-react';
+import { Ruler, Weight, Calendar, Activity, Trophy, Star, MapPin, BookOpen, Instagram, Edit3, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import AppNavbar from '@/components/app/AppNavbar';
@@ -7,9 +7,11 @@ import TrophyCard from '@/components/profile/TrophyCard';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { calcAge, calcLevel } from '@/lib/skillUtils';
+import { getI18n } from '@/lib/i18n/server';
+import { localName } from '@/lib/i18n/dictionaries';
 
 export const dynamic  = 'force-dynamic';
-export const metadata = { title: 'Profile — UNLOCKED' };
+export const metadata = { title: 'UNLOCKED' };
 
 // ── Types for the Supabase join query ────────────────────────────────────────
 
@@ -18,6 +20,7 @@ type UnlockedSkillRow = {
   unlocked_at: string;
   skills: {
     name:       string;
+    name_he:    string | null;
     xp:         number;
     category:   string;
     tree_type:  string;
@@ -53,7 +56,7 @@ async function getProfile(userId: string): Promise<ProfileRow | null> {
       instagram_handle, gender, country, motivation_quote,
       user_unlocked_skills (
         skill_id, unlocked_at,
-        skills ( name, xp, category, tree_type, difficulty )
+        skills ( name, name_he, xp, category, tree_type, difficulty )
       )
     `)
     .eq('id', userId)
@@ -74,13 +77,16 @@ export default async function ProfilePage() {
   if (!user) redirect('/login');
 
   const profile = await getProfile(user.id);
+  const { locale, t } = await getI18n();
+  const tp = t.profilePage;
+  const dateLocale = locale === 'he' ? 'he-IL' : 'en-GB';
 
   if (!profile) {
     return (
       <div className="min-h-screen bg-slate-950">
-        <AppNavbar />
+        <AppNavbar labels={t.nav} />
         <main className="flex items-center justify-center pt-40">
-          <p className="text-slate-500">Profile not found.</p>
+          <p className="text-slate-500">{tp.notFound}</p>
         </main>
       </div>
     );
@@ -98,9 +104,9 @@ export default async function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <AppNavbar />
+      <AppNavbar labels={t.nav} />
 
-      <main className="mx-auto max-w-4xl px-6 pt-24 pb-20">
+      <main className="mx-auto max-w-4xl px-6 pt-24 pb-28">
 
         {/* ── Profile hero ──────────────────────────────────────────── */}
         <section className="mb-10 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
@@ -114,10 +120,10 @@ export default async function ProfilePage() {
               </div>
               <div className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-bold text-white">
                 <Star size={12} className="text-amber-400" fill="currentColor" />
-                Level {level}
+                {tp.level(level)}
                 {profile.is_coach && (
-                  <span className="ml-1 rounded-full bg-violet-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-400">
-                    Coach
+                  <span className="ms-1 rounded-full bg-violet-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-400">
+                    {tp.coach}
                   </span>
                 )}
               </div>
@@ -129,13 +135,23 @@ export default async function ProfilePage() {
                 <h1 className="text-3xl font-black text-white">{profile.username}</h1>
                 <p className="text-sm text-slate-400">@{profile.username.toLowerCase()}</p>
               </div>
+              <div className="flex items-center gap-2">
+              <Link
+                href="/settings"
+                aria-label={tp.settings}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 transition-colors hover:border-cyan-500/50 hover:text-cyan-400"
+              >
+                <Settings size={12} />
+                {tp.settings}
+              </Link>
               <Link
                 href="/profile/edit"
                 className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 transition-colors hover:border-cyan-500/50 hover:text-cyan-400"
               >
                 <Edit3 size={12} />
-                Edit Profile
+                {tp.editProfile}
               </Link>
+              </div>
             </div>
 
             {profile.location && (
@@ -165,23 +181,23 @@ export default async function ProfilePage() {
             )}
 
             {profile.motivation_quote && (
-              <blockquote className="mt-2 border-l-2 border-cyan-500/40 pl-3 text-xs italic text-slate-500">
+              <blockquote className="mt-2 border-s-2 border-cyan-500/40 ps-3 text-xs italic text-slate-500">
                 "{profile.motivation_quote}"
               </blockquote>
             )}
 
             <p className="mt-1 text-xs text-slate-600">
-              Member since {new Date(profile.joined_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+              {tp.memberSince(new Date(profile.joined_at).toLocaleDateString(dateLocale, { month: 'long', year: 'numeric' }))}
             </p>
 
             {/* XP bar */}
             <div className="mt-4">
               <div className="mb-1.5 flex items-center justify-between text-xs">
                 <span className="font-semibold text-slate-400">
-                  {totalXP.toLocaleString()} XP total
+                  {tp.xpTotal(totalXP.toLocaleString())}
                 </span>
                 <span className="text-slate-600">
-                  {xpIntoLevel} / 1000 to Level {level + 1}
+                  {tp.toNextLevel(xpIntoLevel, level + 1)}
                 </span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
@@ -196,33 +212,33 @@ export default async function ProfilePage() {
 
         {/* ── Stats ─────────────────────────────────────────────────── */}
         <section className="mb-10">
-          <SectionTitle>Athlete Stats</SectionTitle>
+          <SectionTitle>{tp.athleteStats}</SectionTitle>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatCard
-              label="Height"
-              value={profile.height_m ? `${profile.height_m}m` : '—'}
+              label={tp.height}
+              value={profile.height_m ? `${profile.height_m}${tp.meters}` : '—'}
               Icon={Ruler}
               accentClass="text-cyan-400 bg-cyan-500/10"
             />
             <StatCard
-              label="Weight"
-              value={profile.weight_kg ? `${profile.weight_kg}kg` : '—'}
+              label={tp.weight}
+              value={profile.weight_kg ? `${profile.weight_kg}${tp.kg}` : '—'}
               Icon={Weight}
               accentClass="text-violet-400 bg-violet-500/10"
             />
             <StatCard
-              label="Age"
-              value={age ? `${age} yrs` : '—'}
+              label={tp.age}
+              value={age ? tp.years(age) : '—'}
               sub={profile.dob
-                ? `Born ${new Date(profile.dob).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                ? tp.born(new Date(profile.dob).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short', year: 'numeric' }))
                 : undefined}
               Icon={Calendar}
               accentClass="text-amber-400 bg-amber-500/10"
             />
             <StatCard
-              label="BMI"
+              label={tp.bmi}
               value={bmi ?? '—'}
-              sub={bmi ? 'Normal range' : undefined}
+              sub={undefined}
               Icon={Activity}
               accentClass="text-emerald-400 bg-emerald-500/10"
             />
@@ -234,15 +250,15 @@ export default async function ProfilePage() {
           <div className="mb-4 flex items-center justify-between">
             <SectionTitle>
               <Trophy size={16} className="text-amber-400" />
-              Arsenal
+              {tp.arsenal}
             </SectionTitle>
             <span className="text-xs font-semibold text-slate-500">
-              {unlockedRows.length} skills verified
+              {tp.skillsVerified(unlockedRows.length)}
             </span>
           </div>
 
           {unlockedRows.length === 0 ? (
-            <p className="text-sm text-slate-600">No skills unlocked yet.</p>
+            <p className="text-sm text-slate-600">{tp.noSkills}</p>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {unlockedRows.map((row) => {
@@ -250,7 +266,7 @@ export default async function ProfilePage() {
                 // Build a shape compatible with TrophyCard's Skill prop
                 const skill = {
                   id:             row.skill_id,
-                  name:           row.skills.name,
+                  name:           localName(row.skills, locale),
                   xp:             row.skills.xp,
                   category:       row.skills.category,
                   treeType:       row.skills.tree_type,
@@ -258,7 +274,7 @@ export default async function ProfilePage() {
                   description:    '',
                   prerequisiteIds: [],
                 };
-                return <TrophyCard key={row.skill_id} skill={skill as never} />;
+                return <TrophyCard key={row.skill_id} skill={skill as never} categoryLabel={t.categories[row.skills.category]} />;
               })}
             </div>
           )}

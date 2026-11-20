@@ -2,9 +2,10 @@ import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import EditProfileForm from './EditProfileForm';
+import { getI18n } from '@/lib/i18n/server';
 
 export const dynamic  = 'force-dynamic';
-export const metadata = { title: 'Edit Profile — UNLOCKED' };
+export const metadata = { title: 'UNLOCKED' };
 
 export default async function EditProfilePage() {
   const serverClient = await createSupabaseServerClient();
@@ -17,5 +18,6 @@ export default async function EditProfilePage() {
     .eq('id', user.id)
     .single();
 
-  return <EditProfileForm userId={user.id} initialData={profile ?? {}} />;
+  const { t } = await getI18n();
+  return <EditProfileForm userId={user.id} initialData={profile ?? {}} nav={t.nav} t={t.editProfile} />;
 }

@@ -3,6 +3,8 @@ import type { Skill } from '@/types';
 
 interface TrophyCardProps {
   skill: Skill;
+  /** Category name in the user's language (defaults to the English label). */
+  categoryLabel?: string;
 }
 
 const CATEGORY_STYLE: Record<string, { bg: string; text: string; label: string }> = {
@@ -12,7 +14,7 @@ const CATEGORY_STYLE: Record<string, { bg: string; text: string; label: string }
   legs:  { bg: 'bg-orange-500/10', text: 'text-orange-400', label: 'Legs'  },
 };
 
-export default function TrophyCard({ skill }: TrophyCardProps) {
+export default function TrophyCard({ skill, categoryLabel }: TrophyCardProps) {
   const style = CATEGORY_STYLE[skill.category] ?? {
     bg: 'bg-slate-700/30',
     text: 'text-slate-400',
@@ -29,7 +31,7 @@ export default function TrophyCard({ skill }: TrophyCardProps) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold text-white">{skill.name}</p>
         <p className={`text-[10px] font-semibold uppercase tracking-wide ${style.text}`}>
-          {style.label}
+          {categoryLabel ?? style.label}
         </p>
       </div>
 

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser';
 import Button from '@/components/ui/Button';
 import AppNavbar from '@/components/app/AppNavbar';
+import type { Dictionary } from '@/lib/i18n/dictionaries';
 
 type FormData = {
   username?:         string | null;
@@ -23,9 +24,11 @@ type FormData = {
 interface Props {
   userId:      string;
   initialData: FormData;
+  nav:         Dictionary['nav'];
+  t:           Dictionary['editProfile'];
 }
 
-export default function EditProfileForm({ userId, initialData }: Props) {
+export default function EditProfileForm({ userId, initialData, nav, t }: Props) {
   const router  = useRouter();
   const supabase = createSupabaseBrowserClient();
 
@@ -68,19 +71,19 @@ export default function EditProfileForm({ userId, initialData }: Props) {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <AppNavbar />
+      <AppNavbar labels={nav} />
 
       <main className="mx-auto max-w-lg px-6 pt-28 pb-20">
         <Link
           href="/profile"
           className="mb-6 flex items-center gap-1.5 text-xs text-slate-500 transition-colors hover:text-slate-300"
         >
-          <ArrowLeft size={13} />
-          Back to Profile
+          <ArrowLeft size={13} className="rtl:rotate-180" />
+          {t.back}
         </Link>
 
         <h1 className="mb-8 text-3xl font-black uppercase tracking-tight text-white">
-          Edit Profile
+          {t.title}
         </h1>
 
         {error && (
@@ -90,7 +93,7 @@ export default function EditProfileForm({ userId, initialData }: Props) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <Field label="Username">
+          <Field label={t.username}>
             <input
               type="text"
               value={form.username ?? ''}
@@ -100,7 +103,7 @@ export default function EditProfileForm({ userId, initialData }: Props) {
           </Field>
 
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Height (m)">
+            <Field label={t.height}>
               <input
                 type="number"
                 step="0.01"
@@ -112,7 +115,7 @@ export default function EditProfileForm({ userId, initialData }: Props) {
                 placeholder="e.g. 1.88"
               />
             </Field>
-            <Field label="Weight (kg)">
+            <Field label={t.weight}>
               <input
                 type="number"
                 step="0.1"
@@ -127,70 +130,70 @@ export default function EditProfileForm({ userId, initialData }: Props) {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Gender">
+            <Field label={t.gender}>
               <select
                 value={form.gender ?? ''}
                 onChange={(e) => set('gender', e.target.value)}
                 className={inputCls}
               >
-                <option value="">— select —</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-                <option value="prefer_not">Prefer not to say</option>
+                <option value="">{t.select}</option>
+                <option value="male">{t.male}</option>
+                <option value="female">{t.female}</option>
+                <option value="other">{t.other}</option>
+                <option value="prefer_not">{t.preferNot}</option>
               </select>
             </Field>
-            <Field label="Country">
+            <Field label={t.country}>
               <input
                 type="text"
                 value={form.country ?? ''}
                 onChange={(e) => set('country', e.target.value)}
                 className={inputCls}
-                placeholder="e.g. Ireland"
+                placeholder={t.countryPh}
               />
             </Field>
           </div>
 
-          <Field label="Location">
+          <Field label={t.location}>
             <input
               type="text"
               value={form.location ?? ''}
               onChange={(e) => set('location', e.target.value)}
               className={inputCls}
-              placeholder="e.g. Dublin, Ireland"
+              placeholder={t.locationPh}
             />
           </Field>
 
-          <Field label="Instagram Handle">
+          <Field label={t.instagram}>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-slate-500">@</span>
+              <span className="absolute start-3.5 top-1/2 -translate-y-1/2 text-sm text-slate-500">@</span>
               <input
                 type="text"
                 value={(form.instagram_handle ?? '').replace(/^@/, '')}
                 onChange={(e) => set('instagram_handle', e.target.value.replace(/^@/, ''))}
-                className={`${inputCls} pl-8`}
+                className={`${inputCls} ps-8`}
                 placeholder="yourhandle"
               />
             </div>
           </Field>
 
-          <Field label="Bio">
+          <Field label={t.bio}>
             <textarea
               rows={3}
               value={form.bio ?? ''}
               onChange={(e) => set('bio', e.target.value)}
               className={`${inputCls} resize-none`}
-              placeholder="Tell us about yourself…"
+              placeholder={t.bioPh}
             />
           </Field>
 
-          <Field label="Motivation Quote">
+          <Field label={t.motivation}>
             <textarea
               rows={2}
               value={form.motivation_quote ?? ''}
               onChange={(e) => set('motivation_quote', e.target.value)}
               className={`${inputCls} resize-none`}
-              placeholder="What drives you?"
+              placeholder={t.motivationPh}
             />
           </Field>
 
@@ -202,7 +205,7 @@ export default function EditProfileForm({ userId, initialData }: Props) {
             disabled={saving}
           >
             <Save size={14} />
-            {saving ? 'Saving…' : 'Save Changes'}
+            {saving ? t.saving : t.save}
           </Button>
         </form>
       </main>
