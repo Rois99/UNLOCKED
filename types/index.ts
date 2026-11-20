@@ -3,7 +3,7 @@ export type SkillState       = 'unlocked' | 'available' | 'locked';
 export type TreeType         = 'calisthenics' | 'gym';
 export type RequirementType  = 'AND' | 'OR';
 export type SkillCategory    =
-  | 'pull' | 'push' | 'lever' | 'balance' | 'core'   // calisthenics
+  | 'pull' | 'push' | 'lever' | 'legs' | 'balance' | 'core'   // calisthenics
   | 'squat' | 'bench' | 'deadlift';                    // gym
 
 export interface Skill {

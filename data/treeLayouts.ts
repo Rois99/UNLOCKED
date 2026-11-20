@@ -24,6 +24,7 @@ const CATEGORY_ANGLE: Record<string, number> = {
   pull:     300,
   push:      60,
   lever:    180,
+  legs:       0,
   balance:  240,
   core:     120,
   // gym

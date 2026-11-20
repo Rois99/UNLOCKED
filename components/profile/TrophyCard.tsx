@@ -9,6 +9,7 @@ const CATEGORY_STYLE: Record<string, { bg: string; text: string; label: string }
   pull:  { bg: 'bg-cyan-500/10',   text: 'text-cyan-400',   label: 'Pull'  },
   push:  { bg: 'bg-violet-500/10', text: 'text-violet-400', label: 'Push'  },
   lever: { bg: 'bg-amber-500/10',  text: 'text-amber-400',  label: 'Lever' },
+  legs:  { bg: 'bg-orange-500/10', text: 'text-orange-400', label: 'Legs'  },
 };
 
 export default function TrophyCard({ skill }: TrophyCardProps) {

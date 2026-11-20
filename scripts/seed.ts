@@ -39,6 +39,11 @@ const SKILLS = [
   { id: 'tuck_front_lever_10s', name: 'Tuck Front Lever 10s',   description: 'Hold a tuck front lever position for 10 seconds.',                  category: 'lever',    tree_type: 'calisthenics', xp: 800,  difficulty: 'intermediate', requirement_type: 'AND' },
   { id: 'adv_tuck_front_lever', name: 'Adv. Tuck Front Lever',  description: 'Hold an advanced tuck front lever for 10 seconds.',                 category: 'lever',    tree_type: 'calisthenics', xp: 1200, difficulty: 'advanced',      requirement_type: 'AND' },
   { id: 'full_front_lever',     name: 'Full Front Lever 5s',    description: 'Hold a full front lever for 5 seconds. Requires adv. tuck lever OR 2× OAP.', category: 'lever', tree_type: 'calisthenics', xp: 2500, difficulty: 'elite', requirement_type: 'OR'  },
+  // Calisthenics · Legs (bodyweight squat progression — standards to be signed off by the coach)
+  { id: '50_squats',            name: '50 Bodyweight Squats',   description: 'Complete 50 consecutive bodyweight squats, hips below knee level.', category: 'legs', tree_type: 'calisthenics', xp: 300,  difficulty: 'beginner',     requirement_type: 'AND' },
+  { id: '15_bulgarian_split',   name: '15 Bulgarian Split Squats', description: 'Complete 15 Bulgarian split squats on each leg, rear foot elevated.', category: 'legs', tree_type: 'calisthenics', xp: 500,  difficulty: 'intermediate', requirement_type: 'AND' },
+  { id: 'pistol_squat',         name: 'Pistol Squat',           description: 'Complete a full single-leg pistol squat on each leg without support.', category: 'legs', tree_type: 'calisthenics', xp: 1200, difficulty: 'advanced',     requirement_type: 'AND' },
+  { id: '10_pistol_squats',     name: '10 Pistol Squats',       description: 'Complete 10 consecutive pistol squats on each leg.',                category: 'legs', tree_type: 'calisthenics', xp: 2500, difficulty: 'elite',        requirement_type: 'AND' },
   // Gym · Squat
   { id: 'squat_100',            name: 'Squat 100 kg',           description: 'Complete a 1-rep max back squat of 100 kg.',                        category: 'squat',    tree_type: 'gym',          xp: 600,  difficulty: 'intermediate', requirement_type: 'AND' },
   { id: 'squat_140',            name: 'Squat 140 kg',           description: 'Complete a 1-rep max back squat of 140 kg.',                        category: 'squat',    tree_type: 'gym',          xp: 1400, difficulty: 'advanced',      requirement_type: 'AND' },
@@ -71,6 +76,10 @@ const SKILL_DEPENDENCIES = [
   { skill_id: 'adv_tuck_front_lever', prerequisite_id: 'tuck_front_lever_10s' },
   { skill_id: 'full_front_lever',    prerequisite_id: 'adv_tuck_front_lever' },
   { skill_id: 'full_front_lever',    prerequisite_id: '2_oap' },             // ← OR path
+  // Legs chain (calisthenics)
+  { skill_id: '15_bulgarian_split',  prerequisite_id: '50_squats' },
+  { skill_id: 'pistol_squat',        prerequisite_id: '15_bulgarian_split' },
+  { skill_id: '10_pistol_squats',    prerequisite_id: 'pistol_squat' },
   // Gym — Squat
   { skill_id: 'squat_140',           prerequisite_id: 'squat_100' },
   { skill_id: 'squat_180',           prerequisite_id: 'squat_140' },
