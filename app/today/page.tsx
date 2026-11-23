@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { CalendarCheck, MapPin, Target, Trophy } from 'lucide-react';
 import AppNavbar from '@/components/app/AppNavbar';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { requireUserId } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getI18n } from '@/lib/i18n/server';
 import { localName } from '@/lib/i18n/dictionaries';
@@ -18,9 +18,7 @@ type Named = { name: string; name_he: string | null } | null;
 type GoalRow = UserGoal & { goals: Named; skills: Named; exercises: Named };
 
 export default async function TodayPage() {
-  const serverClient = await createSupabaseServerClient();
-  const { data: { user } } = await serverClient.auth.getUser();
-  if (!user) redirect('/login');
+  const user = { id: await requireUserId() };
 
   const { locale, t } = await getI18n();
   const tp = t.todayPage;

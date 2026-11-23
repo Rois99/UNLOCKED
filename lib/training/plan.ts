@@ -46,18 +46,29 @@ export async function loadContent() {
 
 type LastPerformance = { values: number[]; feedback: Feedback | null; workoutFeedback: Feedback | null };
 
-/** Most recent finished performance of an exercise by this user (excluding one workout). */
-export async function lastPerformance(userId: string, exerciseId: string, excludeWorkoutId?: string): Promise<LastPerformance | null> {
+/**
+ * Most recent finished performance of each exercise by this user (excluding
+ * one workout), in a single query. Looks back one year.
+ */
+export async function lastPerformances(
+  userId: string, exerciseIds: string[], excludeWorkoutId?: string,
+): Promise<Map<string, LastPerformance>> {
+  const result = new Map<string, LastPerformance>();
+  const ids = [...new Set(exerciseIds)];
+  if (ids.length === 0) return result;
+
+  const since = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
   const { data } = await supabaseAdmin
     .from('workout_exercises')
-    .select('id, feedback, workout_id, workouts!inner(user_id, status, finished_at, feedback), workout_sets(set_number, actual_value)')
-    .eq('exercise_id', exerciseId)
+    .select('exercise_id, feedback, workout_id, workouts!inner(user_id, status, finished_at, feedback), workout_sets(set_number, actual_value)')
+    .in('exercise_id', ids)
     .eq('status', 'done')
     .eq('workouts.user_id', userId)
     .in('workouts.status', ['completed', 'partial'])
-    .limit(20);
+    .gte('workouts.finished_at', since);
 
   type Row = {
+    exercise_id: string;
     workout_id: string;
     feedback: Feedback | null;
     workouts: { finished_at: string | null; feedback: Feedback | null };
@@ -65,15 +76,22 @@ export async function lastPerformance(userId: string, exerciseId: string, exclud
   };
   const rows = ((data ?? []) as unknown as Row[])
     .filter((r) => r.workout_id !== excludeWorkoutId && r.workouts?.finished_at)
-    .sort((a, b) => (b.workouts.finished_at! > a.workouts.finished_at! ? 1 : -1));
-  const last = rows[0];
-  if (!last) return null;
-  const values = last.workout_sets
-    .sort((a, b) => a.set_number - b.set_number)
-    .map((s) => s.actual_value)
-    .filter((v): v is number => v !== null);
-  if (values.length === 0) return null;
-  return { values, feedback: last.feedback, workoutFeedback: last.workouts.feedback };
+    .sort((a, b) => (b.workouts.finished_at! > a.workouts.finished_at! ? 1 : -1));   // newest first
+
+  for (const r of rows) {
+    if (result.has(r.exercise_id)) continue;
+    const values = [...r.workout_sets]
+      .sort((a, b) => a.set_number - b.set_number)
+      .map((s) => s.actual_value)
+      .filter((v): v is number => v !== null);
+    if (values.length > 0) result.set(r.exercise_id, { values, feedback: r.feedback, workoutFeedback: r.workouts.feedback });
+  }
+  return result;
+}
+
+/** Most recent finished performance of one exercise (see lastPerformances). */
+export async function lastPerformance(userId: string, exerciseId: string, excludeWorkoutId?: string): Promise<LastPerformance | null> {
+  return (await lastPerformances(userId, [exerciseId], excludeWorkoutId)).get(exerciseId) ?? null;
 }
 
 /** The stage to train for a goal: its current stage, or the nearest easier one that fits. */
@@ -110,10 +128,12 @@ export async function createWorkout(userId: string, texts: PlanTexts, exName: (e
     exercise: Exercise; goalId: string; stage: ProgressionStage; planned: number;
   }[] = [];
 
-  for (const goal of (goals ?? []) as UserGoal[]) {
-    const pick = pickStage(goal, content.stages, content.exById, fit.ctx);
+  const picks = ((goals ?? []) as UserGoal[]).map((goal) => ({ goal, pick: pickStage(goal, content.stages, content.exById, fit.ctx) }));
+  const lasts = await lastPerformances(userId, picks.flatMap((p) => (p.pick ? [p.pick.exercise.id] : [])));
+
+  for (const { goal, pick } of picks) {
     if (!pick) continue;
-    const last = await lastPerformance(userId, pick.exercise.id);
+    const last = lasts.get(pick.exercise.id) ?? null;
     let planned = last ? Math.max(...last.values) : pick.stage.target_min;
     const feltEasy = last && (last.feedback === 'easy' || last.workoutFeedback === 'easy');
     if (feltEasy) {
@@ -180,6 +200,8 @@ export async function applyProgression(userId: string, workoutId: string) {
     loadContent(),
   ]);
 
+  const prevs = await lastPerformances(userId, (exercises ?? []).map((we) => we.exercise_id), workoutId);
+
   for (const we of exercises ?? []) {
     const goal = (goals ?? []).find((g) => g.goal_id === we.goal_id) as UserGoal | undefined;
     if (!goal) continue;
@@ -187,7 +209,7 @@ export async function applyProgression(userId: string, workoutId: string) {
     if (!stage || stage.stage !== goal.current_stage) continue;
 
     const values = (we.workout_sets as { actual_value: number | null }[]).map((s) => s.actual_value ?? 0);
-    const prev   = await lastPerformance(userId, we.exercise_id, workoutId);
+    const prev   = prevs.get(we.exercise_id) ?? null;
     const allMax = (v: number[]) => v.length > 0 && v.every((x) => x >= stage.target_max);
     const below  = (v: number[]) => v.some((x) => x < stage.target_min);
 

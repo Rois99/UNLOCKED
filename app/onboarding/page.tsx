@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { requireUserId } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getI18n } from '@/lib/i18n/server';
 import { localName } from '@/lib/i18n/dictionaries';
@@ -9,9 +9,7 @@ export const dynamic  = 'force-dynamic';
 export const metadata = { title: 'UNLOCKED' };
 
 export default async function OnboardingPage() {
-  const client = await createSupabaseServerClient();
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) redirect('/login');
+  const user = { id: await requireUserId() };
 
   const { locale, t } = await getI18n();
 

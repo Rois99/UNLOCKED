@@ -1,11 +1,11 @@
 import { notFound, redirect } from 'next/navigation';
 import { Trophy } from 'lucide-react';
 import AppNavbar from '@/components/app/AppNavbar';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { requireUserId } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getI18n } from '@/lib/i18n/server';
 import { localName } from '@/lib/i18n/dictionaries';
-import { lastPerformance } from '@/lib/training/plan';
+import { lastPerformances } from '@/lib/training/plan';
 import FeedbackForm from './FeedbackForm';
 
 export const dynamic  = 'force-dynamic';
@@ -19,9 +19,7 @@ type Row = {
 
 export default async function WorkoutDonePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const client = await createSupabaseServerClient();
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) redirect('/login');
+  const user = { id: await requireUserId() };
 
   const { data: workout } = await supabaseAdmin.from('workouts').select('*').eq('id', id).eq('user_id', user.id).maybeSingle();
   if (!workout) notFound();
@@ -43,9 +41,10 @@ export default async function WorkoutDonePage({ params }: { params: Promise<{ id
 
   // New best = best set today beats the best set of the previous session.
   const bests: string[] = [];
+  const prevAll = await lastPerformances(user.id, done.map((r) => r.exercise_id), id);
   for (const r of done) {
     const today = Math.max(...r.workout_sets.map((s) => s.actual_value ?? 0));
-    const prev  = await lastPerformance(user.id, r.exercise_id, id);
+    const prev  = prevAll.get(r.exercise_id) ?? null;
     if (prev && today > Math.max(...prev.values)) {
       bests.push(td.newBest(localName(r.exercises, locale), today, Math.max(...prev.values)));
     }

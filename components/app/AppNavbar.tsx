@@ -20,13 +20,23 @@ export default function AppNavbar({ labels }: { labels: Dictionary['nav'] }) {
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   // The signed-in user's name for the chip (their own profile row, allowed by RLS).
+  // Read the session locally (no auth round trip) and remember the name per
+  // user for this tab, so page changes don't refetch it.
   const [username, setUsername] = useState<string>('');
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return;
-      const { data } = await supabase.from('profiles').select('username').eq('id', user.id).single();
-      if (data?.username) setUsername(data.username);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const id = session?.user.id;
+      if (!id) return;
+      const key = `unlocked:username:${id}`;
+      let name: string | null = null;
+      try { name = sessionStorage.getItem(key); } catch { /* storage unavailable */ }
+      if (!name) {
+        const { data } = await supabase.from('profiles').select('username').eq('id', id).single();
+        name = data?.username ?? null;
+        if (name) { try { sessionStorage.setItem(key, name); } catch { /* ignore */ } }
+      }
+      if (name) setUsername(name);
     });
   }, []);
 

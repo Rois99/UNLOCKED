@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { requireUserId } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getI18n } from '@/lib/i18n/server';
 import { localName } from '@/lib/i18n/dictionaries';
@@ -17,9 +17,7 @@ const REASONS: SwapReason[]   = ['no_equipment', 'too_hard', 'uncomfortable'];
 const END_REASONS: EndReason[] = ['out_of_time', 'tired', 'pain', 'other'];
 
 async function requireUser() {
-  const client = await createSupabaseServerClient();
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) redirect('/login');
+  const user = { id: await requireUserId() };
   return user;
 }
 

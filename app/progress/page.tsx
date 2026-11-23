@@ -1,7 +1,6 @@
-import { redirect } from 'next/navigation';
 import { Flame, TrendingUp } from 'lucide-react';
 import AppNavbar from '@/components/app/AppNavbar';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { requireUserId } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getI18n } from '@/lib/i18n/server';
 import { localName } from '@/lib/i18n/dictionaries';
@@ -20,9 +19,7 @@ type WorkoutRow = {
 };
 
 export default async function ProgressPage() {
-  const serverClient = await createSupabaseServerClient();
-  const { data: { user } } = await serverClient.auth.getUser();
-  if (!user) redirect('/login');
+  const user = { id: await requireUserId() };
 
   const { locale, t } = await getI18n();
   const tp = t.progressPage;

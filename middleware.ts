@@ -26,7 +26,10 @@ export async function middleware(request: NextRequest) {
   );
 
   // Refresh the session — MUST be called before any auth checks
-  const { data: { user } } = await supabase.auth.getUser();
+  // getClaims() refreshes an expired session and verifies the token locally
+  // against the project's ES256 key — no round trip to the auth server.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const user = claimsData?.claims?.sub ? { id: claimsData.claims.sub } : null;
 
   const pathname = request.nextUrl.pathname;
   const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p));

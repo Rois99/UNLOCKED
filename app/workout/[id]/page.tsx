@@ -1,10 +1,10 @@
 import { notFound, redirect } from 'next/navigation';
 import AppNavbar from '@/components/app/AppNavbar';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { requireUserId } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getI18n } from '@/lib/i18n/server';
 import { localName } from '@/lib/i18n/dictionaries';
-import { fits, lastPerformance, loadContent, loadFitContext } from '@/lib/training/plan';
+import { fits, lastPerformances, loadContent, loadFitContext } from '@/lib/training/plan';
 import type { ExerciseStatus, MeasureType } from '@/types';
 import WorkoutRunner, { type RunnerExercise } from './WorkoutRunner';
 
@@ -13,9 +13,7 @@ export const metadata = { title: 'UNLOCKED' };
 
 export default async function WorkoutPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const client = await createSupabaseServerClient();
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) redirect('/login');
+  const user = { id: await requireUserId() };
 
   const { data: workout } = await supabaseAdmin
     .from('workouts').select('*').eq('id', id).eq('user_id', user.id).maybeSingle();
@@ -31,15 +29,15 @@ export default async function WorkoutPage({ params }: { params: Promise<{ id: st
   ]);
 
   // Previous performances in parallel (one round trip each to the database).
-  const lasts = await Promise.all((rows ?? []).map((r) => lastPerformance(user.id, r.exercise_id, id)));
+  const lasts = await lastPerformances(user.id, (rows ?? []).map((r) => r.exercise_id), id);
 
   const exercises: RunnerExercise[] = [];
-  for (const [i, row] of (rows ?? []).entries()) {
+  for (const row of rows ?? []) {
     const ex = exById.get(row.exercise_id);
     if (!ex) continue;
     const stage = stages.find((s) => s.goal_id === row.goal_id && s.exercise_id === row.exercise_id);
     const goalStage = goals?.find((g) => g.goal_id === row.goal_id)?.current_stage ?? 1;
-    const last = lasts[i];
+    const last = lasts.get(row.exercise_id) ?? null;
 
     const alternatives = stages
       .filter((s) => s.goal_id === row.goal_id && s.stage <= goalStage && s.exercise_id !== row.exercise_id)

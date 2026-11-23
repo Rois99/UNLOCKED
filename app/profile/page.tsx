@@ -1,10 +1,9 @@
 import { Ruler, Weight, Calendar, Activity, Trophy, Star, MapPin, BookOpen, Instagram, Edit3, Settings } from 'lucide-react';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import AppNavbar from '@/components/app/AppNavbar';
 import StatCard from '@/components/profile/StatCard';
 import TrophyCard from '@/components/profile/TrophyCard';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { requireUserId } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { calcAge, calcLevel } from '@/lib/skillUtils';
 import { getI18n } from '@/lib/i18n/server';
@@ -72,9 +71,7 @@ async function getProfile(userId: string): Promise<ProfileRow | null> {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function ProfilePage() {
-  const serverClient = await createSupabaseServerClient();
-  const { data: { user } } = await serverClient.auth.getUser();
-  if (!user) redirect('/login');
+  const user = { id: await requireUserId() };
 
   const profile = await getProfile(user.id);
   const { locale, t } = await getI18n();
@@ -182,7 +179,7 @@ export default async function ProfilePage() {
 
             {profile.motivation_quote && (
               <blockquote className="mt-2 border-s-2 border-cyan-500/40 ps-3 text-xs italic text-slate-500">
-                "{profile.motivation_quote}"
+                &ldquo;{profile.motivation_quote}&rdquo;
               </blockquote>
             )}
 

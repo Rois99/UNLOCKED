@@ -1,7 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { requireUserId } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import {
   BODY_AREAS as AREAS, EQUIPMENT_KEYS as EQUIPMENT, QUESTION_COUNT, RED_FLAG_QUESTIONS, SESSION_MINUTES as MINUTES,
@@ -9,9 +9,7 @@ import {
 } from '@/lib/onboarding';
 
 export async function completeOnboarding(p: OnboardingPayload): Promise<{ error: string } | void> {
-  const client = await createSupabaseServerClient();
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) redirect('/login');
+  const user = { id: await requireUserId() };
 
   // ── Validate everything server-side ────────────────────────────────────
   if (!Array.isArray(p.answers) || p.answers.length !== QUESTION_COUNT) return { error: 'answers' };

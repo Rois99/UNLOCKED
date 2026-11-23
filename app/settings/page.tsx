@@ -1,8 +1,7 @@
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import AppNavbar from '@/components/app/AppNavbar';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { requireUserId } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getI18n } from '@/lib/i18n/server';
 import { isLocale } from '@/lib/i18n/dictionaries';
@@ -12,9 +11,7 @@ export const dynamic  = 'force-dynamic';
 export const metadata = { title: 'UNLOCKED' };
 
 export default async function SettingsPage() {
-  const serverClient = await createSupabaseServerClient();
-  const { data: { user } } = await serverClient.auth.getUser();
-  if (!user) redirect('/login');
+  const user = { id: await requireUserId() };
 
   const { locale, t } = await getI18n();
   const ts = t.settingsPage;
